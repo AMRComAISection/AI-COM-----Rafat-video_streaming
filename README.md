@@ -97,7 +97,7 @@ Note: If you’d like the full-install of OpenCV including “non-free” (paten
 Project structure
 Before we move on, let’s take a look at our directory structure for the project:
 
-'''
+```
 OpenCV - Stream video to web browser/HTML page
 $ tree --dirsfirst
 .
@@ -111,7 +111,7 @@ $ tree --dirsfirst
 └── webstreaming.py
 
 3 directories, 5 files
-'''
+```
 
 To perform background subtraction and motion detection we’ll be implementing a class named SingleMotionDetector — this class will live inside the singlemotiondetector.py file found in the motion_detection submodule of pyimagesearch.
 
@@ -141,7 +141,7 @@ Let’s go ahead and implement the motion detector.
 
 Open up the singlemotiondetector.py file and insert the following code:
 
-'''
+```
 OpenCV - Stream video to web browser/HTML page
 # import the necessary packages
 import numpy as np
@@ -154,7 +154,7 @@ class SingleMotionDetector:
 		# initialize the background model
 		self.bg = None
 Lines 2-4 handle our required imports.
-'''
+```
 
 
 All of these are fairly standard, including NumPy for numerical processing, imutils for our convenience functions, and cv2 for our OpenCV bindings.
@@ -169,6 +169,7 @@ Setting accumWeight=0.5 weights both the background and foreground evenly — I 
 
 Next, let’s define the update method which will accept an input frame and compute the weighted average:
 
+```
 OpenCV - Stream video to web browser/HTML page
 	def update(self, image):
 		# if the background model is None, initialize it
@@ -178,12 +179,15 @@ OpenCV - Stream video to web browser/HTML page
 		# update the background model by accumulating the weighted
 		# average
 		cv2.accumulateWeighted(image, self.bg, self.accumWeight)
+		
+```
+
 In the case that our bg frame is None (implying that update has never been called), we simply store the bg frame (Lines 15-18).
 
 Otherwise, we compute the weighted average between the input frame, the existing background bg, and our corresponding accumWeight factor.
 
 Given our background bg we can now apply motion detection via the detect method:
-
+```
 OpenCV - Stream video to web browser/HTML page
 	def detect(self, image, tVal=25):
 		# compute the absolute difference between the background model
@@ -194,6 +198,8 @@ OpenCV - Stream video to web browser/HTML page
 		# blobs
 		thresh = cv2.erode(thresh, None, iterations=2)
 		thresh = cv2.dilate(thresh, None, iterations=2)
+		
+```
 The detect method requires a single parameter along with an optional one:
 
 image: The input frame/image that motion detection will be applied to.
@@ -205,7 +211,7 @@ Any pixel locations that have a difference > tVal are set to 255 (white; foregro
 A series of erosions and dilations are performed to remove noise and small, localized areas of motion that would otherwise be considered false-positives (likely due to reflections or rapid changes in light).
 
 The next step is to apply contour detection to extract any motion regions:
-
+```
 OpenCV - Stream video to web browser/HTML page
 		# find contours in the thresholded image and initialize the
 		# minimum and maximum bounding box regions for motion
@@ -215,11 +221,11 @@ OpenCV - Stream video to web browser/HTML page
 		(minX, minY) = (np.inf, np.inf)
 		(maxX, maxY) = (-np.inf, -np.inf)
 Lines 37-39 perform contour detection on our thresh image.
-
+```
 We then initialize two sets of bookkeeping variables to keep track of the location where any motion is contained (Lines 40 and 41). These variables will form the “bounding box” which will tell us the location of where the motion is taking place.
 
 The final step is to populate these variables (provided motion exists in the frame, of course):
-
+```
 OpenCV - Stream video to web browser/HTML page
 		# if no contours were found, return None
 		if len(cnts) == 0:
@@ -235,7 +241,7 @@ OpenCV - Stream video to web browser/HTML page
 		# with bounding box
 		return (thresh, (minX, minY, maxX, maxY))
 On Lines 43-45 we make a check to see if our contours list is empty.
-
+```
 If that’s the case, then there was no motion found in the frame and we can safely ignore it.
 
 Otherwise, motion does exist in the frame so we need to start looping over the contours (Line 48).
@@ -250,7 +256,7 @@ Figure 3: OpenCV and Flask (a Python micro web framework) make the perfect pair 
 Let’s go ahead and combine OpenCV with Flask to serve up frames from a video stream (running on a Raspberry Pi) to a web browser.
 
 Open up the webstreaming.py file in your project structure and insert the following code:
-
+```
 OpenCV - Stream video to web browser/HTML page
 # import the necessary packages
 from pyimagesearch.motion_detection import SingleMotionDetector
@@ -285,6 +291,7 @@ app = Flask(__name__)
 #vs = VideoStream(usePiCamera=1).start()
 vs = VideoStream(src=0).start()
 time.sleep(2.0)
+```
 First, we initialize our outputFrame on Line 17 — this will be the frame (post-motion detection) that will be served to the clients.
 
 We then create a lock on Line 18 which will be used to ensure thread-safe behavior when updating the ouputFrame (i.e., ensuring that one thread isn’t trying to read the frame as it is being updated).
@@ -294,12 +301,14 @@ Line 21 initialize our Flask app itself while Lines 25-27 access our video strea
 If you are using a USB webcam, you can leave the code as is.
 However, if you are using a RPi camera module you should uncomment Line 25 and comment out Line 26.
 The next function, index, will render our index.html template and serve up the output video stream:
-
+```
 OpenCV - Stream video to web browser/HTML page
 @app.route("/")
 def index():
 	# return the rendered template
 	return render_template("index.html")
+
+```
 This function is quite simplistic — all it’s doing is calling the Flask render_template on our HTML file.
 
 We’ll be reviewing the index.html file in the next section so we’ll hold off on a further discussion on the file contents until then.
@@ -312,7 +321,7 @@ Drawing any results on the outputFrame
 And furthermore, this function must perform all of these operations in a thread safe manner to ensure concurrency is supported.
 
 Let’s take a look at this function now:
-
+```
 OpenCV - Stream video to web browser/HTML page
 def detect_motion(frameCount):
 	# grab global references to the video stream, output frame, and
@@ -322,6 +331,7 @@ def detect_motion(frameCount):
 	# read thus far
 	md = SingleMotionDetector(accumWeight=0.1)
 	total = 0
+```
 Our detection_motion function accepts a single argument, frameCount, which is the minimum number of required frames to build our background bg in the SingleMotionDetector class:
 
 If we don’t have at least frameCount frames, we’ll continue to compute the accumulated weighted average.
@@ -338,7 +348,7 @@ Line 42 then initializes the total number of frames read thus far — we’ll ne
 From there, we’ll be able to perform background subtraction.
 
 With these initializations complete, we can now start looping over frames from the camera:
-
+```
 OpenCV - Stream video to web browser/HTML page
 	# loop over frames from the video stream
 	while True:
@@ -353,6 +363,7 @@ OpenCV - Stream video to web browser/HTML page
 		cv2.putText(frame, timestamp.strftime(
 			"%A %d %B %Y %I:%M:%S%p"), (10, frame.shape[0] - 10),
 			cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
+```
 Line 48 reads the next frame from our camera while Lines 49-51 perform preprocessing, including:
 
 Resizing to have a width of 400px (the smaller our input frame is, the less data there is, and thus the faster our algorithms will run).
@@ -361,7 +372,7 @@ Gaussian blurring (to reduce noise).
 We then grab the current timestamp and draw it on the frame (Lines 54-57).
 
 With one final check, we can perform motion detection:
-
+```
 OpenCV - Stream video to web browser/HTML page
 		# if the total number of frames has reached a sufficient
 		# number to construct a reasonable background model, then
@@ -385,6 +396,7 @@ OpenCV - Stream video to web browser/HTML page
 		# lock
 		with lock:
 			outputFrame = frame.copy()
+```
 On Line 62 we ensure that we have read at least frameCount frames to build our background subtraction model.
 
 If so, we apply the .detect motion of our motion detector, which returns a single variable, motion.
@@ -398,7 +410,7 @@ Finally, Line 81 acquires the lock required to support thread concurrency while 
 We need to acquire the lock to ensure the outputFrame variable is not accidentally being read by a client while we are trying to update it.
 
 Our next function, generate , is a Python generator used to encode our outputFrame as JPEG data — let’s take a look at it now:
-
+```
 OpenCV - Stream video to web browser/HTML page
 def generate():
 	# grab global references to the output frame and lock variables
@@ -419,6 +431,7 @@ def generate():
 		# yield the output frame in the byte format
 		yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
 			bytearray(encodedImage) + b'\r\n')
+```
 Line 86 grabs global references to our outputFrame and lock, similar to the detect_motion function.
 
 Then generate starts an infinite loop on Line 89 that will continue until we kill the script.
@@ -433,7 +446,7 @@ Finally, serve the encoded JPEG frame as a byte array that can be consumed by a 
 That was quite a lot of work in a short amount of code, so definitely make sure you review this function a few times to ensure you understand how it works.
 
 The next function, video_feed calls our generate function:
-
+```
 OpenCV - Stream video to web browser/HTML page
 @app.route("/video_feed")
 def video_feed():
@@ -441,6 +454,7 @@ def video_feed():
 	# type (mime type)
 	return Response(generate(),
 		mimetype = "multipart/x-mixed-replace; boundary=frame")
+```
 Notice how this function as the app.route signature, just like the index function above.
 
 The app.route signature tells Flask that this function is a URL endpoint and that data is being served from http://your_ip_address/video_feed.
@@ -448,7 +462,7 @@ The app.route signature tells Flask that this function is a URL endpoint and tha
 The output of video_feed is the live motion detection output, encoded as a byte array via the generate function. Your web browser is smart enough to take this byte array and display it in your browser as a live feed.
 
 Our final code block handles parsing command line arguments and launching the Flask app:
-
+```
 OpenCV - Stream video to web browser/HTML page
 # check to see if this is the main thread of execution
 if __name__ == '__main__':
@@ -471,13 +485,17 @@ if __name__ == '__main__':
 		threaded=True, use_reloader=False)
 # release the video stream pointer
 vs.stop()
+```
 Lines 118-125 handle parsing our command line arguments.
 
 We need three arguments here, including:
-
+```
 --ip: The IP address of the system you are launching the webstream.py  file from.
+
 --port: The port number that the Flask app will run on (you’ll typically supply a value of 8000 for this parameter).
+
 --frame-count: The number of frames used to accumulate and build the background model before motion detection is performed. By default, we use 32  frames to build the background model.
+```
 Lines 128-131 launch a thread that will be used to perform motion detection.
 
 Using a thread ensures the detect_motion function can safely run in the background — it will be constantly running and updating our outputFrame so we can serve any motion detection results to our clients.
@@ -492,7 +510,7 @@ The template itself is populated by the Flask web framework and then served to t
 Your web browser then takes the generated HTML and renders it to your screen.
 
 Let’s inspect the contents of our index.html file:
-
+```
 OpenCV - Stream video to web browser/HTML page
 <html>
   <head>
@@ -503,6 +521,7 @@ OpenCV - Stream video to web browser/HTML page
     <img src="{{ url_for('video_feed') }}">
   </body>
 </html>
+```
 As we can see, this is super basic web page; however, pay close attention to Line 7 — notice how we are instructing Flask to dynamically render the URL of our video_feed route.
 
 Since the video_feed function is responsible for serving up frames from our webcam, the src of the image will be automatically populated with our output frames.
@@ -513,7 +532,7 @@ Putting the pieces together
 Now that we’ve coded up our project, let’s put it to the test.
 
 Open up a terminal and execute the following command:
-
+```
 OpenCV - Stream video to web browser/HTML page
 $ python webstreaming.py --ip 0.0.0.0 --port 8000
  * Serving Flask app "webstreaming" (lazy loading)
@@ -525,6 +544,7 @@ $ python webstreaming.py --ip 0.0.0.0 --port 8000
 127.0.0.1 - - [26/Aug/2019 14:43:23] "GET / HTTP/1.1" 200 -
 127.0.0.1 - - [26/Aug/2019 14:43:23] "GET /video_feed HTTP/1.1" 200 -
 127.0.0.1 - - [26/Aug/2019 14:43:24] "GET /favicon.ico HTTP/1.1" 404 -
+```
 As you can see in the video, I opened connections to the Flask/OpenCV server from multiple browsers, each with multiple tabs. I even pulled out my iPhone and opened a few connections from there. The server didn’t skip a beat and continued to serve up frames reliably with Flask and OpenCV.
 
 Join the embedded computer vision and deep learning revolution!
