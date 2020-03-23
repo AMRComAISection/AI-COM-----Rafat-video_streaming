@@ -210,9 +210,9 @@ if __name__ == '__main__':
 		t.daemon = True
 		t.start()
 
-		t2 = threading.Thread(target=video_rec, args=(cam))
-		t2.daemon = True
-		t2.start()
+		# t2 = threading.Thread(target=video_rec, args=(cam))
+		# t2.daemon = True
+		# t2.start()
 		pass
 
 
