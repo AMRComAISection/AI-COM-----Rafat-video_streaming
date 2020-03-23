@@ -3,7 +3,7 @@ Please see the dock
 https://www.pyimagesearch.com/2019/09/02/opencv-stream-video-to-web-browser-html-page/
 
 run cmd :
-python webstreaming.py -i 192.168.123.100 -o 8080
+python webstreaming.py -i 192.168.123.100 -o 8080 -s 0
 '''
 # import the necessary packages
 # from pyimagesearch.motion_detection import SingleMotionDetector
@@ -149,9 +149,6 @@ def detect_motion(frameCount,cameraNumber):
 			outputFrame[cameraNumber] = frame.copy()   
 
 
-
-
-
 def generate(cameraNumber):
 	# grab global references to the output frame and lock variables
 	global outputFrame, lock
@@ -176,14 +173,6 @@ def generate(cameraNumber):
 			bytearray(encodedImage) + b'\r\n')
 
 
-# @app.route("/video_feed")
-# def video_feed():
-# 	# return the response generated along with the specific media
-# 	# type (mime type)
-# 	return Response(generate(),
-# 		mimetype = "multipart/x-mixed-replace; boundary=frame")
-
-
 @app.route("/video_feed/<id>")
 def video_feed(id):
 	camNum = int(id)
@@ -200,6 +189,8 @@ def video_feed(id):
 
 
     # check to see if this is the main thread of execution
+
+
 if __name__ == '__main__':
 	# construct the argument parser and parse command line arguments
 	ap = argparse.ArgumentParser()
@@ -212,7 +203,7 @@ if __name__ == '__main__':
 	ap.add_argument("-f", "--frame-count", type=int, default=32,
 		help="# of frames used to construct the background model")
 	args = vars(ap.parse_args())
-	
+
 	save_video = args['save_video']
 
 	if save_video:
