@@ -18,6 +18,7 @@ import datetime
 import imutils
 import time
 import cv2
+import os
 
 # count number of camera connected
 countCamera = countCameras()
@@ -31,8 +32,10 @@ if countCamera <= 0:
 # exchanges of the output frames (useful when multiple browsers/tabs
 # are viewing the stream)
 outputFrame = []
-
+videoOut = []
+save_video = 0
 lock = threading.Lock()
+
 # initialize a flask object
 app = Flask(__name__)
 # initialize the video stream and allow the camera sensor to
@@ -43,7 +46,7 @@ vs = []
 for i in range( countCamera ):
 	outputFrame.append(None)
 	vs.append(VideoStream(src=i).start())
-	pass
+	# vs.append(cv2.VideoCapture(i))
 
 time.sleep(2.0)
 
@@ -94,8 +97,6 @@ def video_rec(camera_id):
 
 def detect_motion(frameCount,cameraNumber):
 
-
-	
 	# out = cv2.VideoWriter(file_name,fourcc, 20, (width_vdo,width_vdo))
 	# grab global references to the video stream, output frame, and
 	# lock variables
@@ -109,6 +110,12 @@ def detect_motion(frameCount,cameraNumber):
 		# read the next frame from the video stream, resize it,
 		# convert the frame to grayscale, and blur it
 		frame = vs[cameraNumber].read()
+		if save_video:
+			cv2.imwrite(str(cameraNumber)+'.jpg',frame)
+			img = cv2.imread(str(cameraNumber)+'.jpg')
+			videoOut[cameraNumber].write(img)
+			# videoOut.append(frame)
+		
 		frame = imutils.resize(frame, width=400, height=400)
 		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		gray = cv2.GaussianBlur(gray, (7, 7), 0)
@@ -161,6 +168,9 @@ def generate(cameraNumber):
 			# ensure the frame was successfully encoded
 			if not flag:
 				continue
+			# cv2.imwrite(str(cameraNumber)+'.jpg',encodedImage)
+			# img = cv2.imread(str(cameraNumber)+'.jpg',0)
+			# videoOut[cameraNumber].write(img)
 		# yield the output frame in the byte format
 		yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + 
 			bytearray(encodedImage) + b'\r\n')
@@ -197,10 +207,19 @@ if __name__ == '__main__':
 		help="ip address of the device")
 	ap.add_argument("-o", "--port", type=int, required=True,
 		help="ephemeral port number of the server (1024 to 65535)")
+	ap.add_argument("-s", "--save-video", type=int, required=True,
+		help="Are you want to save video in file")
 	ap.add_argument("-f", "--frame-count", type=int, default=32,
 		help="# of frames used to construct the background model")
 	args = vars(ap.parse_args())
 	
+	save_video = args['save_video']
+
+	if save_video:
+		fourcc = cv2.VideoWriter_fourcc(*'XVID')
+		file_name = str(i)+".avi"
+		videoOut.append(cv2.VideoWriter(file_name,fourcc, 20, (640,480)))
+
 	for cam in range(countCamera):
 		# start a thread that will perform motion detection
 		
@@ -210,14 +229,14 @@ if __name__ == '__main__':
 		t.daemon = True
 		t.start()
 
-		# t2 = threading.Thread(target=video_rec, args=(cam))
+		# t2 = threading.Thread(target=video_rec, args=(cam,))
 		# t2.daemon = True
 		# t2.start()
 		pass
 
 
 
-
+	
 	
 	# start the flask app
 	app.run(host=args["ip"], port=args["port"], debug=True,
@@ -225,4 +244,8 @@ if __name__ == '__main__':
 # release the video stream pointer
 for i in range(countCamera):
 	vs[i].stop()
+	# vs[i].release()
+	if save_video:
+		videoOut[i].release()
 	pass
+cv2.destroyAllWindows()
