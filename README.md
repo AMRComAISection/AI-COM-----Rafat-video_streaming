@@ -1,4 +1,4 @@
-# video_streaming
+# My Video Streaming
  
 OpenCV – Stream video to web browser/HTML page
 by Adrian Rosebrock on September 2, 2019
