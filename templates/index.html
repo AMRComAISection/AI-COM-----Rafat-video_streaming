@@ -3,7 +3,13 @@
     <title>Pi Video Surveillance</title>
   </head>
   <body>
-    <h1>Pi Video Surveillance</h1>
-    <img src="{{ url_for('video_feed') }}">
+    <h1>Camera : {{ countCamera }}</h1>
+    
+    <center>
+     {% for camera in range(countCamera) %}
+     <img src="video_feed/{{ camera }}">
+     {% endfor %}
+    </center>
   </body>
+
 </html>

@@ -1,5 +1,10 @@
 # My Video Streaming
  
+# required package
+pip install imutils
+pip install flask
+pip install opencv
+
 OpenCV – Stream video to web browser/HTML page
 by Adrian Rosebrock on September 2, 2019
 
